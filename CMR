@@ -1,0 +1,91 @@
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+public class Messenger {
+
+    static class User {
+        private String name;
+        public User(String name) { this.name = name; }
+        public String getName() { return name; }
+    }
+
+    static class Message {
+        private User sender;
+        private String content;
+        private LocalDateTime time;
+
+        public Message(User sender, String content) {
+            this.sender = sender;
+            this.content = content;
+            this.time = LocalDateTime.now();
+        }
+
+        @Override
+        public String toString() {
+            String timeStr = time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            return "[" + timeStr + "] " + sender.getName() + ": " + content;
+        }
+    }
+
+    static class MessageService {
+        private final String FILE_PATH = "messages.txt";
+
+        public void sendMessage(Message msg) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_PATH, true))) {
+                bw.write(msg.toString());
+                bw.newLine();
+            } catch (IOException e) {
+                System.out.println(" 메시지 저장 실패");
+            }
+        }
+
+        public void loadMessages() {
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                System.out.println(" 저장된 메시지가 없습니다.");
+                return;
+            }
+
+            System.out.println(" 이전 메시지 기록:");
+            try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    System.out.println(line);
+                }
+            } catch (IOException e) {
+                System.out.println(" 메시지 불러오기 실패");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        MessageService service = new MessageService();
+
+        System.out.print(" 사용자 A 이름: ");
+        User userA = new User(sc.nextLine());
+
+        System.out.print(" 사용자 B 이름: ");
+        User userB = new User(sc.nextLine());
+
+        System.out.println("\n 채팅 시작! (종료하려면 'exit' 입력)");
+        service.loadMessages();
+
+        while (true) {
+            System.out.print(userA.getName() + " > ");
+            String msgA = sc.nextLine();
+            if (msgA.equalsIgnoreCase("exit")) break;
+            service.sendMessage(new Message(userA, msgA));
+
+            System.out.print(userB.getName() + " > ");
+            String msgB = sc.nextLine();
+            if (msgB.equalsIgnoreCase("exit")) break;
+            service.sendMessage(new Message(userB, msgB));
+        }
+
+        System.out.println(" 채팅 종료!");
+        sc.close();
+    }
+}
